@@ -51,7 +51,7 @@ def basic_dump():
     "PYfUpYaHkRe\u0012,\u0012",
     "tcRfOj]iY",
     "&]EW?\u001d",
-
+    "Jk^g]qY,^nIgHmSvTvYqH",
   ]
 
   for cryptext in ble_crypts:
@@ -124,13 +124,13 @@ def annotate_file(filename):
           cryptext = cryptext.encode('utf-8').decode('unicode-escape')
 
           annotation = "/* \"{}\" */ \"{}\"".format(cryptext, DECRYPTOR(cryptext))
-          line = re.sub(EXPR, annotation, line)
+          line = re.sub(EXPR, annotation, line, count=1)
           print(annotation)
 
     modified += line + "\n"
 
   # Overwrite the file. There are comments above every modified line with the original line.
-  if (made_changes):
+  if (True and made_changes):
     with open(filename, "w") as nuked:
       nuked.write(modified)
 
