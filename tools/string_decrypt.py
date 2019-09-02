@@ -52,6 +52,20 @@ def basic_dump():
     "tcRfOj]iY",
     "&]EW?\u001d",
     "Jk^g]qY,^nIgHmSvTvYqH",
+    "---------------------",
+    "iVz/\u0004",
+    "\u0019",
+    "\u001d",
+    "\u0011",
+    "\u0011",
+    "\u001f",
+    "\u0002",
+    "\u001d",
+    "\u001d",
+    "\u0000",
+    "\u0002",
+    "\u001d",
+
   ]
 
   for cryptext in ble_crypts:
@@ -82,8 +96,8 @@ def basic_dump():
     "S",
   ]
 
-  for cryptext in r_crypts:
-    print("{}   // \"{}\"".format(cryptext, RDecryptString(cryptext)))
+  #for cryptext in r_crypts:
+  #  print("{}   // \"{}\"".format(cryptext, RDecryptString(cryptext)))
 
 
 

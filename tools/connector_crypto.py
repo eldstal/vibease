@@ -9,9 +9,27 @@ import base64
 
 
 # CryptoHandler has two hard-coded keys (for Descramble)
-# and one that is settable from outside.
+# and one that comes from the vibrator at runtime called HS
 KEY1 = "2iYNPjW9ptZj6L7snPfPWIH5onzQ0V1p".encode("ascii")
 KEY2 = "4sRewsha3G54ZqEcjr9Iadexd1sKB8vr".encode("ascii")
+
+# A key captured on my device. It does not change if I restart the app and pair again.
+# This key appears to be provided by the vibrator.
+# Host writes to UUID 803C3B1F-D300-1120-0530-33A62B7838C9
+# with the payload
+#  $aGk=!
+# The vibrator responds with two packets.
+# In my case, they were
+#  #fSFwIxA6Oy9VNAJTNS>
+#  <ECNixC!
+# These are concatenated by the host to the string
+#  "fSFwIxA6Oy9VNAJTNSECNixC"
+# This string needs to be decoded from base64 and Descramble()'d using KEY2.
+# This yields
+#  HS=GxJROgt4fnQDVA3
+# which is our key!
+KEY_HS_RX = "fSFwIxA6Oy9VNAJTNSECNixC"
+KEY_HS = "GxJROgt4fnQDVA3".encode("ascii")
 
 # Pass in a byte array cryptext
 # and a byte-array for a key
@@ -40,6 +58,18 @@ def Scramble(plaintext, key):
   return bytes(cryptext)
 
 
+# Pass in the magic string that was provided by the vibrator
+# in response to $aGK=!
+# For example, cryptext might be "fSFwIxA6Oy9VNAJTNSECNixC".
+def DecodeAndDescramble(cryptext, key):
+  decode = base64.b64decode(cryptext)
+  descramble = Descramble(decode, key)
+  lines = decode.split("\n")
+  for l in lines:
+    pass
+
+
+
 # Pass in a string, get a list of strings for data packets back
 # This is how the app breaks a longer payload up for transmission
 # in short BLE packets
@@ -50,6 +80,7 @@ def ScrambleAndFragment(payload, key):
     n_blocks += 1
 
   if (n_blocks == 1):
+    # Single packet
     return [ "*" + scrambled + "!" ]
 
   packets = [ ]
@@ -83,13 +114,27 @@ u64 = base64.b64decode(b64_possibly)
 print(u64)
 print(Descramble(u64, KEY1))
 print(Descramble(u64, KEY2))
+print(Descramble(u64, KEY_HS))
 
 for p in payloads:
   print(Descramble(p.encode("ascii"), KEY1))
   print(Descramble(p.encode("ascii"), KEY2))
+  print(Descramble(p.encode("ascii"), KEY_HS))
   print(Scramble(p, KEY1))
   print(Scramble(p, KEY2))
+  print(Scramble(p, KEY_HS))
 
 packets = ScrambleAndFragment("d0t7Y2RWRwVXQ2N3Z3JsTXljgExCB1dffnNlcnhVfmGAWFkNVV9iaXB0eElnY35YRQ==", KEY1)
 for p in packets:
   print(p)
+
+
+key_cmd = Descramble(base64.b64decode("aGk="), KEY1)
+print(key_cmd)
+key_cmd = Descramble(base64.b64decode("aGk="), KEY2)
+print(key_cmd)
+
+key_hs_scrambled = base64.b64decode(KEY_HS_RX)
+key_hs = Descramble(key_hs_scrambled, KEY2)
+print(key_hs)
+print(KEY_HS)
