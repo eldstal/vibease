@@ -129,10 +129,13 @@ for p in packets:
   print(p)
 
 
-key_cmd = Descramble(base64.b64decode("aGk="), KEY1)
-print(key_cmd)
+#key_cmd = Descramble(base64.b64decode("aGk="), KEY1)
+#print(key_cmd)
 key_cmd = Descramble(base64.b64decode("aGk="), KEY2)
-print(key_cmd)
+print("Handshake command: {} {}".format(key_cmd, key_cmd.encode("ascii")))
+
+nokey_cmd = Descramble(base64.b64decode("YHM="), KEY2)
+print("Buggy Handshake command: {} {}".format(nokey_cmd, nokey_cmd.encode("ascii")))
 
 key_hs_scrambled = base64.b64decode(KEY_HS_RX)
 key_hs = Descramble(key_hs_scrambled, KEY2)
