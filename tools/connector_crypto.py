@@ -31,6 +31,9 @@ KEY2 = "4sRewsha3G54ZqEcjr9Iadexd1sKB8vr".encode("ascii")
 KEY_HS_RX = "fSFwIxA6Oy9VNAJTNSECNixC"
 KEY_HS = "GxJROgt4fnQDVA3".encode("ascii")
 
+# Due to a bug in the scrambler, the last byte of KEY_HS is ignored.
+KEY_HS = KEY_HS[:-1]
+
 # Pass in a byte array cryptext
 # and a byte-array for a key
 # Returns a string
@@ -41,7 +44,7 @@ def Descramble(cryptext, key):
   for i in range(len(plaintext)):
     plaintext[i] = (plaintext[i] - 1) ^ key[i % len(key)]
 
-  return bytes(plaintext).decode("ascii")
+  return bytes(plaintext)
 
 
 
@@ -98,43 +101,49 @@ def ScrambleAndFragment(payload, key):
 
   return packets
 
+def parse_packets(packets, key):
+  b64 = ""
+  for p in packets:
+    content = p[1:-1]
+    b64 += content
+    if (p[-1] == "!"):
+      break
+
+  print(b64)
+  scrambled = base64.b64decode(b64)
+  print(scrambled)
+  return Descramble(scrambled, key)
+
+stop_vibe_packets = [
+  # Should be "Stop vibrating"
+  "*eE57Y2RYQgVX!"
+]
 
 # Payloads from some data packets sniffed off the BLE connection
-payloads = [
+vibe_pattern_packets = [
   # These packets all make up a single write, really.
-  "*d0t7Y2RWRwVXQ2N3>",   # "Test vibration", probably.
+  # "Test vibration", probably.
+  # From the code, this should descramble to
+  # "1200,2200,3200,4200,5200,6200,7200,8200,9200,0200"
+  "*d0t7Y2RWRwVXQ2N3>",
   "<Z3JsTXljgExCB1df>",
   "<fnNlcnhVfmGAWFkN>",
   "<VV9iaXB0eElnY35Y>",
-  "<RQ==!",
+  "<RQ==!"
 ]
 
-b64_possibly = "d0t7Y2RWRwVXQ2N3Z3JsTXljgExCB1dffnNlcnhVfmGAWFkNVV9iaXB0eElnY35YRQ=="
-u64 = base64.b64decode(b64_possibly)
-print(u64)
-print(Descramble(u64, KEY1))
-print(Descramble(u64, KEY2))
-print(Descramble(u64, KEY_HS))
 
-for p in payloads:
-  print(Descramble(p.encode("ascii"), KEY1))
-  print(Descramble(p.encode("ascii"), KEY2))
-  print(Descramble(p.encode("ascii"), KEY_HS))
-  print(Scramble(p, KEY1))
-  print(Scramble(p, KEY2))
-  print(Scramble(p, KEY_HS))
+vibe_pattern_cmd = parse_packets(vibe_pattern_packets, KEY_HS)
+print("Vibrate pattern : {}".format(vibe_pattern_cmd))
 
-packets = ScrambleAndFragment("d0t7Y2RWRwVXQ2N3Z3JsTXljgExCB1dffnNlcnhVfmGAWFkNVV9iaXB0eElnY35YRQ==", KEY1)
-for p in packets:
-  print(p)
+stop_vibe_pattern_cmd = parse_packets(stop_vibe_packets, KEY_HS)
+print("Stop vibrate cmd: {}".format(stop_vibe_pattern_cmd))
 
-
-key_cmd = Descramble(base64.b64decode("aGk="), KEY1)
-print(key_cmd)
 key_cmd = Descramble(base64.b64decode("aGk="), KEY2)
-print(key_cmd)
+print("Key exchange cmd: {}".format(key_cmd))
 
 key_hs_scrambled = base64.b64decode(KEY_HS_RX)
 key_hs = Descramble(key_hs_scrambled, KEY2)
-print(key_hs)
-print(KEY_HS)
+print("Key exchange response: {}".format(key_hs))
+print("Expected HS key: {}".format(KEY_HS))
+
