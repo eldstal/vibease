@@ -7,11 +7,7 @@
 import sys
 import base64
 
-
-# CryptoHandler has two hard-coded keys (for Descramble)
-# and one that comes from the vibrator at runtime called HS
-KEY1 = "2iYNPjW9ptZj6L7snPfPWIH5onzQ0V1p".encode("ascii")
-KEY2 = "4sRewsha3G54ZqEcjr9Iadexd1sKB8vr".encode("ascii")
+from vibease import *
 
 # A key captured on my device. It does not change if I restart the app and pair again.
 # This key appears to be provided by the vibrator.
@@ -34,85 +30,18 @@ KEY_HS = "GxJROgt4fnQDVA3".encode("ascii")
 # Due to a bug in the scrambler, the last byte of KEY_HS is ignored.
 KEY_HS = KEY_HS[:-1]
 
-# Pass in a byte array cryptext
-# and a byte-array for a key
-# Returns a string
-# This is just a plain xor cipher with an offset by one. No big deal.
-def Descramble(cryptext, key):
-  plaintext = [ b for b in cryptext ]
-
-  for i in range(len(plaintext)):
-    plaintext[i] = (plaintext[i] - 1) ^ key[i % len(key)]
-
-  return bytes(plaintext)
-
-
-
-
-# This is the complementary function, which always uses the third key
-# and a byte-array for a key
-# Returns a byte array
-def Scramble(plaintext, key):
-  cryptext = [ b for b in plaintext.encode("ascii") ]
-
-  for i in range(len(cryptext)):
-    cryptext[i] = (cryptext[i] ^ key[i % len(key)]) + 1
-
-  return bytes(cryptext)
-
-
-# Pass in the magic string that was provided by the vibrator
-# in response to $aGK=!
-# For example, cryptext might be "fSFwIxA6Oy9VNAJTNSECNixC".
-def DecodeAndDescramble(cryptext, key):
-  decode = base64.b64decode(cryptext)
-  descramble = Descramble(decode, key)
-  lines = decode.split("\n")
-  for l in lines:
-    pass
-
-
-
-# Pass in a string, get a list of strings for data packets back
-# This is how the app breaks a longer payload up for transmission
-# in short BLE packets
-def ScrambleAndFragment(payload, key):
-  scrambled = Scramble(payload,key).decode("ascii").replace("\n", "")
-  n_blocks = int(len(scrambled) / 16)
-  if (len(scrambled) % 16 != 0):
-    n_blocks += 1
-
-  if (n_blocks == 1):
-    # Single packet
-    return [ "*" + scrambled + "!" ]
-
-  packets = [ ]
-  for b in range(n_blocks):
-    chunk = scrambled[b*16:(b+1)*16]
-    if (b == 0):
-      # First packet
-      packets += [ "*" + chunk + ">" ]
-    elif (b == n_blocks - 1):
-      # Last packet
-      packets += [ "<" + chunk + "!" ]
-    else:
-      # Middle packets
-      packets += [ "<" + chunk + ">" ]
-
-  return packets
 
 def parse_packets(packets, key):
-  b64 = ""
-  for p in packets:
-    content = p[1:-1]
-    b64 += content
-    if (p[-1] == "!"):
-      break
+  msg = Msg()
 
-  print(b64)
-  scrambled = base64.b64decode(b64)
-  print(scrambled)
-  return Descramble(scrambled, key)
+  done = False
+  plaintext = None
+
+  for p in packets:
+    done,plaintext = msg.add_packet(p, key)
+    if (done): break
+
+  return plaintext
 
 stop_vibe_packets = [
   # Should be "Stop vibrating"
