@@ -185,6 +185,14 @@ Notes:
 My device responds with the following (plaintext bytes): `[0x20 0x45 0x25 0x0e 0x0b 0x50 0x5e 0x62 0x64 0x19 0x56]`
 
 
+### Vibrate Fixed
+Unscrambled example (ASCII): `3150`
+Transmitted packets:
+```
+*dUqAY2RYRQdX!
+```
+Notes: The first digit is the intensity, 0-9. The remaining three digits are a duration.
+
 
 ### Vibrate Pattern
 Unscrambled example (ASCII): `1200,2200,3200,4200,5200,6200,7200,8200,9200,0200`
@@ -197,18 +205,12 @@ Transmitted packets:
 <RQ==!
 ```
 Notes:
-* The first digit is probably intensity while the remaining three could be duration (ms).
-* It appears that a valid pattern is anywhere between 3 and 10 steps.
+* Each number in the sequence is a `Vibrate Fixed` command as outlined above.
+* It appears that a valid pattern is anywhere between 2 and 10 steps.
 * The "patterns" feature in the vibease app doesn't use this command, it sends timed "Vibrate Fixed" commands instead.
-* The actual result of this command is a little unpredictable. In one instance, the above gave me a sawtoothy pattern as expected. In every other case it either did nothing or only started a weak static vibration.
+* The actual result of this long pattern is a little unpredictable. The first time after the vibrator is restarted appears to start a stored pattern of some sort (not necessarily the one from the command). Other times, this command just starts a static vibration.
 
-### Vibrate Fixed
-Unscrambled example (ASCII): `3150,0020`
-Transmitted packets:
-```
-*dUqAY2RYRQdX!
-```
-Notes: This comes from the manual control in the main Vibease app, which has a 2D touch surface on the axes "speed" and "strength".
+Length-2 vibrations can be used for a simple oscillating pattern, for example `7200,3500` (High for 0.2s, low for 0.5s, repeat)
 
 ### Stop
 Unscrambled example (ASCII): `0500,0500`
