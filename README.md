@@ -194,7 +194,6 @@ Notes:
 
 My device responds with the following (plaintext bytes): `[0x20 0x45 0x25 0x0e 0x0b 0x50 0x5e 0x62 0x64 0x19 0x56]`
 
-The beginning of this is the same two bytes as the command, which leads me to believe it is a response. I have not yet figured out the contents of this message.
 
 
 ### Vibrate Pattern
@@ -211,6 +210,8 @@ Notes:
 * The first digit is probably intensity while the remaining three could be duration (ms).
 * It appears that a valid pattern is anywhere between 3 and 10 steps.
 * The "patterns" feature in the vibease app doesn't use this command, it sends timed "Vibrate Fixed" commands instead.
+* The actual result of this command is a little unpredictable. In one instance, the above gave me a sawtoothy pattern as
+  expected. In every other case it either did nothing or only started a weak static vibration.
 
 ### Vibrate Fixed
 Unscrambled example (ASCII): `3150,0020`
