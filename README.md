@@ -98,7 +98,7 @@ Payloads are scrambled according to the above, B64-encoded and then fragmented i
 With data bytes denoted as  `DDDD...`, here are the known packet formats:
 
 * A single-chunk payload of data (16 bytes or shorter) is transmitted as `*DDDDD!`
-  * The first character of this packet is variable. The host uses `$` or `*`. The device uses `#` or `!`.
+  * The first character (prefix) of the packet is variable. The host uses `$` or `*`. The device uses `#` or `%`.
 * A multi-chunk payload:
   * First 16-byte chunk: `*DDDDDDDDDDDDDDDD>`
     * The same prefix rules apply
