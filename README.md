@@ -191,7 +191,7 @@ Transmitted packets:
 ```
 *dUqAY2RYRQdX!
 ```
-Notes: The first digit is the intensity, 0-9. The remaining three digits are a duration.
+Notes: The first digit is the intensity, 0-9. The remaining three digits are a duration in ms.
 
 
 ### Vibrate Pattern
