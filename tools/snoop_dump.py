@@ -95,7 +95,8 @@ def main():
     done,plaintext = msg.add_packet(packet.decode("ascii"), KEY_TX, KEY_RX)
 
     if (done):
-      print("{} {} {}".format(msg.direction, msg.prefix, msg.plaintext))
+      barr = "[" + " ".join(["0x{:02x}".format(b) for b in msg.plaintext ]) + "]"
+      print("{} {} {} {}".format(msg.direction, msg.prefix, msg.plaintext, barr))
       msg = None
 
       # Detect the key exchange and use the HS key the device provided

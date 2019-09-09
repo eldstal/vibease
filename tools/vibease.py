@@ -108,7 +108,7 @@ class Msg:
 
       else:
         # These packets aren't b64-encoded or scrambled
-        self.plaintext = Defragment(self.packets)
+        self.plaintext = Defragment(self.packets).encode("ascii")
 
       return True,self.plaintext
 
