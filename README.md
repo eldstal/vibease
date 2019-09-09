@@ -113,7 +113,7 @@ Here is a python implementation of the scrambling and fragmentation employed in 
 # Pass in a plaintext string, get a list of strings for data packets back
 # This is how the app breaks a longer payload up for transmission
 # in short BLE packets
-def ScrambleAndFragment(payload, key):
+def ScrambleAndFragment(payload, prefix="*", key=KEY_TX):
   scrambled = Scramble(payload,key).decode("ascii").replace("\n", "")
   encoded = Base64.b64encode(scrambled)
 
@@ -123,14 +123,14 @@ def ScrambleAndFragment(payload, key):
 
   if (n_blocks == 1):
     # Single packet
-    return [ "*" + encoded + "!" ]
+    return [ prefix + encoded + "!" ]
 
   packets = [ ]
   for b in range(n_blocks):
     chunk = encoded[b*16:(b+1)*16]
     if (b == 0):
       # First packet
-      packets += [ "*" + chunk + ">" ]
+      packets += [ prefix + chunk + ">" ]
     elif (b == n_blocks - 1):
       # Last packet
       packets += [ "<" + chunk + "!" ]
@@ -200,8 +200,7 @@ Notes:
 * The first digit is probably intensity while the remaining three could be duration (ms).
 * It appears that a valid pattern is anywhere between 3 and 10 steps.
 * The "patterns" feature in the vibease app doesn't use this command, it sends timed "Vibrate Fixed" commands instead.
-* The actual result of this command is a little unpredictable. In one instance, the above gave me a sawtoothy pattern as
-  expected. In every other case it either did nothing or only started a weak static vibration.
+* The actual result of this command is a little unpredictable. In one instance, the above gave me a sawtoothy pattern as expected. In every other case it either did nothing or only started a weak static vibration.
 
 ### Vibrate Fixed
 Unscrambled example (ASCII): `3150,0020`
