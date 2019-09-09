@@ -38,7 +38,7 @@ def parse_packets(packets, key):
   plaintext = None
 
   for p in packets:
-    done,plaintext = msg.add_packet(p, key)
+    done,plaintext = msg.add_packet(p, KEY_HS, KEY2)
     if (done): break
 
   return plaintext
