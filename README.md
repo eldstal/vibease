@@ -7,15 +7,12 @@ This is an outline of my attempt to reverse-engineer its communication protocol.
 # Vibease vibrator protocol
 
 ## Basic Communication
-The vibrator exposes two BLE characteristics using the same UUID. One of them has
-the property `READ` and the other one has the property `WRITE_WITHOUT_RESPONSE`.
+The vibrator exposes two BLE characteristics using the same UUID. One of them has the property `READ` and the other one has the property `WRITE_WITHOUT_RESPONSE`.
 From here on, these will be referred to as `cmd_read` and `cmd_write` respectively.
 
-The host is expected to subscribe to notifications on `cmd_read` using the standard
-BLE mechanism. These notifications are how the vibrator sends data to the host.
+The host is expected to subscribe to notifications on `cmd_read` using the standard BLE mechanism. These notifications are how the vibrator sends data to the host.
 
-Any data sent from the host to the vibrator is simply written to `cmd_write` after
-an encryption and fragmentation process outlined below.
+Any data sent from the host to the vibrator is simply written to `cmd_write` after an encryption and fragmentation process outlined below.
 
 
 ## UUIDs of note
@@ -44,13 +41,11 @@ KEY2 = "4sRewsha3G54ZqEcjr9Iadexd1sKB8vr".encode("ascii")
 
 There is also a third key, `KEY_HS` which is sent from the vibrator during an initial handshake.
 
-During use, one key is used for each data direction, they will be referred to as `KEY_TX` for
-messages sent from the host to the vibrator and `KEY_RX` for messages from the vibrator to the host.
+During use, one key is used for each data direction, they will be referred to as `KEY_TX` for messages sent from the host to the vibrator and `KEY_RX` for messages from the vibrator to the host.
 
 In my device, `KEY_TX=KEY_HS` and `KEY_RX=KEY2`.
 
-Messages to be transmitted are passed through `Scramble()` before fragmentation.
-Received messages are passed through the complementary `Descramble()` after being reassembled.
+Messages to be transmitted are passed through `Scramble()` before fragmentation. Received messages are passed through the complementary `Descramble()` after being reassembled.
 
 These are python implementations of these rudimentary crypto functions:
 
@@ -81,16 +76,13 @@ def Scramble(plaintext, key):
 ```
 
 ### Truncation of `KEY_HS`
-There is a slight inconsistency when scrambling and descrambling with `KEY_HS`. Instead of using `len(key)`
-for the modulo, the vibrator uses `len(key-1)` which means the last character of `KEY_HS` is never actually used.
+There is a slight inconsistency when scrambling and descrambling with `KEY_HS`. Instead of using `len(key)` for the modulo, the vibrator uses `len(key-1)` which means the last character of `KEY_HS` is never actually used.
 
-With the python example above, it is sufficient to truncate the very last byte of `KEY_HS` and both `Scramble()`
-and `Descramble()` should work as expected using all known keys.
+With the python example above, it is sufficient to truncate the very last byte of `KEY_HS` and both `Scramble()` and `Descramble()` should work as expected using all known keys.
 
 For example, if the device sends `HS=ABCDEFGHIJKLMNO` during handshake, simply set `KEY_HS=ABCDEFGHIJKLMN`
 
-This way, the same function can descramble packets transmitted by the host (using the truncated `KEY_HS`)
-and packets transmitted by the device (using the full `KEY_TX`).
+This way, the same function can descramble packets transmitted by the host (using the truncated `KEY_HS`) and packets transmitted by the device (using the full `KEY_TX`).
 
 
 
@@ -101,21 +93,19 @@ Once scrambled, the payload is encoded using standard Base64 and passed on for f
 
 
 ## BLE Packet fragmentation
-Payloads are scrambled according to the above, B64-encoded and then fragmented if necessary.
-A long b64-encoded payload is split into 16-byte chunks which are surrounded with ASCII markers.
+Payloads are scrambled according to the above, B64-encoded and then fragmented if necessary. A long b64-encoded payload is split into 16-byte chunks which are surrounded with ASCII markers.
+
 With data bytes denoted as  `DDDD...`, here are the known packet formats:
 
 * A single-chunk payload of data (16 bytes or shorter) is transmitted as `*DDDDD!`
-  * The first character of this packet is variable. The host uses `$` or `*`. The device uses `#` or `!`.
+  * The first character (prefix) of the packet is variable. The host uses `$` or `*`. The device uses `#` or `%`.
 * A multi-chunk payload:
   * First 16-byte chunk: `*DDDDDDDDDDDDDDDD>`
     * The same prefix rules apply
   * Following 16-byte chunk(s): `<DDDDDDDDDDDDDDDD>`
   * Last chunk: `<DDDDDDD!`
 
-Each chunk is transmitted as a single write to `cmd_write` or received as a single notification on `cmd_read`.
-They must be received in their proper order, so don't send the next chunk before the first chunk has been
-sent.
+Each chunk is transmitted as a single write to `cmd_write` or received as a single notification on `cmd_read`. They must be received in their proper order, so don't send the next chunk before the first chunk has been sent.
 
 Here is a python implementation of the scrambling and fragmentation employed in vibease.bluetoothtest:
 
@@ -123,7 +113,7 @@ Here is a python implementation of the scrambling and fragmentation employed in 
 # Pass in a plaintext string, get a list of strings for data packets back
 # This is how the app breaks a longer payload up for transmission
 # in short BLE packets
-def ScrambleAndFragment(payload, key):
+def ScrambleAndFragment(payload, prefix="*", key=KEY_TX):
   scrambled = Scramble(payload,key).decode("ascii").replace("\n", "")
   encoded = Base64.b64encode(scrambled)
 
@@ -133,14 +123,14 @@ def ScrambleAndFragment(payload, key):
 
   if (n_blocks == 1):
     # Single packet
-    return [ "*" + encoded + "!" ]
+    return [ prefix + encoded + "!" ]
 
   packets = [ ]
   for b in range(n_blocks):
     chunk = encoded[b*16:(b+1)*16]
     if (b == 0):
       # First packet
-      packets += [ "*" + chunk + ">" ]
+      packets += [ prefix + chunk + ">" ]
     elif (b == n_blocks - 1):
       # Last packet
       packets += [ "<" + chunk + "!" ]
@@ -194,7 +184,14 @@ Notes:
 
 My device responds with the following (plaintext bytes): `[0x20 0x45 0x25 0x0e 0x0b 0x50 0x5e 0x62 0x64 0x19 0x56]`
 
-The beginning of this is the same two bytes as the command, which leads me to believe it is a response. I have not yet figured out the contents of this message.
+
+### Vibrate Fixed
+Unscrambled example (ASCII): `3150`
+Transmitted packets:
+```
+*dUqAY2RYRQdX!
+```
+Notes: The first digit is the intensity, 0-9. The remaining three digits are a duration in ms.
 
 
 ### Vibrate Pattern
@@ -208,17 +205,12 @@ Transmitted packets:
 <RQ==!
 ```
 Notes:
-* The first digit is probably intensity while the remaining three could be duration (ms).
-* It appears that a valid pattern is anywhere between 3 and 10 steps.
+* Each number in the sequence is a `Vibrate Fixed` command as outlined above.
+* It appears that a valid pattern is anywhere between 2 and 10 steps.
 * The "patterns" feature in the vibease app doesn't use this command, it sends timed "Vibrate Fixed" commands instead.
+* The actual result of this long pattern is a little unpredictable. The first time after the vibrator is restarted appears to start a stored pattern of some sort (not necessarily the one from the command). Other times, this command just starts a static vibration.
 
-### Vibrate Fixed
-Unscrambled example (ASCII): `3150,0020`
-Transmitted packets:
-```
-*dUqAY2RYRQdX!
-```
-Notes: This comes from the manual control in the main Vibease app, which has a 2D touch surface on the axes "speed" and "strength".
+Length-2 vibrations can be used for a simple oscillating pattern, for example `7200,3500` (High for 0.2s, low for 0.5s, repeat)
 
 ### Stop
 Unscrambled example (ASCII): `0500,0500`
