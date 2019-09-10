@@ -16,7 +16,7 @@ Any data sent from the host to the vibrator is simply written to `cmd_write` aft
 
 
 ## UUIDs of note
-The following BLE UUIDs are used, and can help identify a BLE device as a vibease.
+The following BLE UUIDs are used, and can help identify a BLE device as a vibease.  
 ```
 DE3A0001-7100-57EF-9190-F1BE84232730     This is the service that contains 803C3B1F-...
 803C3B1F-D300-1120-0530-33A62B7838C9     This is cmd_read and cmd_write on my device
@@ -150,11 +150,11 @@ Some interesting BLE dumps are [here](https://github.com/eldstal/vibease/tree/ma
 
 ## Message prefixes
 ### Host -> Device
-`$` appears to signify non-control commands, such as initialization. Scrambling key differs between commands.
+`$` appears to signify non-control commands, such as initialization. Scrambling key differs between commands.  
 `*` appears to signify normal commands, these are all scrambled with `KEY_TX`
 
 ### Device -> Host
-`%` is used for some sort of version packet, which is entirely unscrambled and not b64 encoded
+`%` is used for some sort of version packet, which is entirely unscrambled and not b64 encoded  
 `#` appears to be used for all normal responses, most are scrambled with `KEY_RX`.
 
 
@@ -164,15 +164,15 @@ Some interesting BLE dumps are [here](https://github.com/eldstal/vibease/tree/ma
 (The examples below use my `KEY_HS=GxJROgt4fnQDVA` and will look different on a different setup.)
 
 ### Perform Key Exchange
-Unscrambled example (bytes): `0x53 0x1B`
-Unscrambled example (ASCII): `S<ESCAPE>`
-Transmitted packets:
+Unscrambled example (bytes): `0x53 0x1B`  
+Unscrambled example (ASCII): `S<ESCAPE>`  
+Transmitted packets:  
 ```
 $aGK=!
-```
+```  
 Notes: Since the host does not yet have KEY_HS, I've assumed that this message is scrambled using `KEY_RX`. We'll find out once we see KEY_1 used, perhaps those devices expect a different packet.
 
-The device responds with its HS key followed by the OK message:
+The device responds with its HS key followed by the OK message:  
 ```
    #fSFwIxA6Oy9VNAJTNS>
    <ECNixC!
@@ -181,11 +181,11 @@ The device responds with its HS key followed by the OK message:
 
 
 ### Report Serial Number
-Unscrambled example (ASCII): `SN`
-Transmitted packets:
+Unscrambled example (ASCII): `SN`  
+Transmitted packets:  
 ```
 $FTc=!
-```
+```  
 
 Notes:
 * Unlike the other `$` prefixed command, this is scrambled using the proper `KEY_TX` which was just received through key exchange. 
@@ -195,17 +195,17 @@ The device responds with a message __scrambled using `KEY_HS`__ which looks some
 If descrambled with `KEY_HS`, the response message is `SN=93DB7102` which appears to be the serial number of the vibrator.
 
 ### Vibrate Fixed
-Unscrambled example (ASCII): `3150`
-Transmitted packets:
+Unscrambled example (ASCII): `3150`  
+Transmitted packets:  
 ```
 *dUqAY2RYRQdX!
-```
+```  
 Notes: The first digit is the intensity, 0-9. The remaining three digits are a duration in ms.
 
 
 ### Vibrate Pattern
-Unscrambled example (ASCII): `1200,2200,3200,4200,5200,6200,7200,8200,9200,0200`
-Transmitted packets:
+Unscrambled example (ASCII): `1200,2200,3200,4200,5200,6200,7200,8200,9200,0200`  
+Transmitted packets:  
 ```
 *d0t7Y2RWRwVXQ2N3>
 <Z3JsTXljgExCB1df>
@@ -267,7 +267,7 @@ There is another uuid, `0002a4d-0000-1000-8000-00805f9b34fb` which is used inter
 If you are implementing the device side of this communication, you should probably choose a `KEY_HS` of equal length to the above example, including the extra byte of garbage.
 
 ## HELO
-After key exchange has been completed, the device sends an unscrambled and un-base64'd message like
+After key exchange has been completed, the device sends an unscrambled and un-base64'd message like  
 ```
 %1406-OK!
 ```
