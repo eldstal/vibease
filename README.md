@@ -150,12 +150,12 @@ Some interesting BLE dumps are [here](https://github.com/eldstal/vibease/tree/ma
 
 ## Message prefixes
 ### Host -> Device
-`$` appears to signify that the message is scrambled using `KEY_RX` rather than `KEY_TX`.
-`*` appears to signify normal commands, scrambled with `KEY_TX`
+`$` appears to signify non-control commands, such as initialization. Scrambling key differs between commands.
+`*` appears to signify normal commands, these are all scrambled with `KEY_TX`
 
 ### Device -> Host
 `%` is used for some sort of version packet, which is entirely unscrambled and not b64 encoded
-`#` appears to be used for all normal responses, scrambled with `KEY_RX`
+`#` appears to be used for all normal responses, most are scrambled with `KEY_RX`.
 
 
 
@@ -172,18 +172,27 @@ $aGK=!
 ```
 Notes: Since the host does not yet have KEY_HS, I've assumed that this message is scrambled using `KEY_RX`. We'll find out once we see KEY_1 used, perhaps those devices expect a different packet.
 
-### Status Query?
-Unscrambled example (bytes): `0x20 0x45`
+The device responds with its HS key followed by the OK message:
+```
+   #fSFwIxA6Oy9VNAJTNS>
+   <ECNixC!
+   %1406-OK!
+```
+
+
+### Report Serial Number
+Unscrambled example (ASCII): `SN`
 Transmitted packets:
 ```
 $FTc=!
 ```
 
 Notes:
-* Like the other `$` prefixed command, this appears to also be scrambled using `KEY_RX`, even though it is sent right after key exchange finishes. 
+* Unlike the other `$` prefixed command, this is scrambled using the proper `KEY_TX` which was just received through key exchange. 
 
-My device responds with the following (plaintext bytes): `[0x20 0x45 0x25 0x0e 0x0b 0x50 0x5e 0x62 0x64 0x19 0x56]`
+The device responds with a message __scrambled using `KEY_HS`__ which looks something like `#FTd4bH0kNwRYX2Q=!`
 
+If descrambled with `KEY_HS`, the response message is `SN=93DB7102` which appears to be the serial number of the vibrator.
 
 ### Vibrate Fixed
 Unscrambled example (ASCII): `3150`
@@ -266,5 +275,6 @@ After key exchange has been completed, the device sends an unscrambled and un-ba
 which appears to be a version number and a basic status report.
 
 
-## Status request
-The official apps send the `Status Query` command and receive the response right after key exchange has been completed.
+## Serial Number
+The official apps send the `Report Serial Number` command and receive the response right after key exchange has been completed.
+This does not appear to be a necessary part of the handshake, and can be left out. It is a good way to make sure `KEY_HS` has been received properly.
