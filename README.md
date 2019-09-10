@@ -222,11 +222,11 @@ Notes:
 Length-2 vibrations can be used for a simple oscillating pattern, for example `7200,3500` (High for 0.2s, low for 0.5s, repeat)
 
 ### Stop
-Unscrambled example (ASCII): `0500,0500`
-Transmitted packets:
+Unscrambled example (ASCII): `0500,0500`  
+Transmitted packets:  
 ```
 *eE57Y2RYQgVX!
-```
+```  
 Notes: Given the "vibrate fixed" command follows the same format, this is probably "Zero speed, Zero intensity".
 
 
